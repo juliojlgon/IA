@@ -1,15 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package ai;
 
-/**
- *
- * @author JulioLopez
- */
+
 public class MiniMax {
     
+    protected double utilMax;
+    protected double utilMin;
+    protected int currDepthLimit;
+    private boolean maxDepthReached;
+    private long maxTime;
+    
+    private int expandedNodes;
+    private int maxDepth;
 }
