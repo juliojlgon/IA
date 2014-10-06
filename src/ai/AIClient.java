@@ -212,7 +212,7 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard)
     {
-        int myMove = new MiniMax().decideMovement(currentBoard, 7, 7, 1, 1);
+        int myMove = getRandom();
         return myMove;
     }
     
