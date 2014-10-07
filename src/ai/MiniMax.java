@@ -2,177 +2,293 @@ package ai;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import kalaha.GameState;
 
 public class MiniMax {
 
-    protected double utilMax;
-    protected double utilMin;
-    protected int currDepthLimit;
-    private GameState Tablero;
-    private int expandedNodes;
-    //private int maxDepth;
+    private static final int maxWin = 1000;
+    private static final int maxLose = -1000;
+    private static final int draw = 0;
     private int player;
-    long tiempo = System.currentTimeMillis();
+    private int depth;
+    private int originalPlayer;
+    private int realDepth;
+    private GameState tablero;
 
-    final static int TIMELIMIT = 5000; //ms
+    /**
+     *
+     * @param board(GameState) it will contain the GameState
+     * @param depth(int) It will have the depth  
+     * @param realDepth(int) The Real depth or the max level of the tree
+     * @param player(int) The current Player
+     * @param originalPlayer(int) The player that was playing in the first iteration
+     * @return Int with the move we are going to do.
+     */
+    public int decideMovement(GameState board, int depth, int realDepth, int player, int originalPlayer) {
+        this.player = player;
+        this.depth = depth;
+        this.realDepth = realDepth;
+        this.originalPlayer = originalPlayer;
+        this.tablero = board.clone();
+        return expand();
+    }
 
-    public void expandir(GameState tablero, int depth, int player) {
-        //Función recursiva que irá llamando para expandir el arbol.
-        this.Tablero = tablero.clone();
-        int profundidad = 0;
-
-        long timeRunning = (System.currentTimeMillis() - tiempo);
-
-        player = tablero.getNextPlayer();
-        if (player == 1) {  //Estamos en el jugador 1
-            if (!Tablero.gameEnded()) { //Si el juego aun no ha terminado.
-                for (int j = 0; j <= depth; j++) { //Numero de veces que ejecutamos el bucle.
-                    for (int i = GameState.START_S; i <= GameState.END_S; i++) {
-                        if (Tablero.moveIsPossible(i)) { //Comprobamos si se puede hacer un movimiento en ese Ambo
-                            Tablero.makeMove(i); //Hacemos el movimiento con las semillas de ese arbol
-                        }
-                        if (!esFinal(Tablero, player) && (j == depth)) {
-                            expandir(Tablero, depth + 1, Tablero.getNextPlayer());
-                        } else {
-                            //Devolver el valor de utilidad del nodo.
-                        }
-                    }
-                }
-            }
-
-        } else { //Jugador 2
-            if (!Tablero.gameEnded()) { //Si el juego aun no ha terminado.
-                for (int j = 0; j <= depth || timeRunning < TIMELIMIT; j++) { //Numero de veces que ejecutamos el bucle.
-                    for (int i = GameState.START_N; i <= GameState.END_N; i++) {
-                        if (Tablero.moveIsPossible(i)) { //Comprobamos si se puede hacer un movimiento en ese Ambo
-                            Tablero.makeMove(i); //Hacemos el movimiento con las semillas de ese arbol
-                        }
-                        if (!esFinal(Tablero, player) && (profundidad == depth)) {
-                            expandir(Tablero, depth + 1, Tablero.getNextPlayer());
-                        } else {
-                            //Devolver el valor de utilidad del nodo.
-                        }
-                    }
-                }
-            }
+    private int emptySpaceMovement() {
+        if (!emptySearch().isEmpty()) {
+            return reachEmptyNodes(emptySearch());
+        } else {
+            return -1;
         }
     }
 
-    public int utilidad(GameState tablero) {
-        int valor = -100;
-
-        return valor;
-    }
-
-    public boolean esFinal(GameState tablero, int player) {
-        boolean result = false;
-        if (tablero.getNoValidMoves(player) == 0) {
-            result = true;
+    /**
+     * Busqueda Vacia. No se que hace.
+     *
+     * @return
+     */
+    private ArrayList<Integer> emptySearch() {
+        ArrayList<Integer> position = new ArrayList<Integer>();
+        for (int i = 1; i < 7; i++) {
+            if (tablero.getSeeds(i, player) == 0) {
+                if (tablero.getSeeds(i, tablero.getNextPlayer()) > 0) {
+                    position.add(i);
+                }
+            }
         }
-        return result;
+        if (position.size() > 1) {
+            return orderPositions(position);
+        } else {
+            return position;
+        }
     }
 
-    public int maxPLayer(int node1, int node2) {
-        int maximo = 0;
-
-        return maximo;
-    }
-
-    public int minPlayer(int node1, int node2) {
-        int minimo = 0;
-
-        return minimo;
-    }
-
-    public int makeDecision(GameState state) {
-        List<int> results;
-        results = null;
-        double resultValue = Double.NEGATIVE_INFINITY;
-        int player = state.getNextPlayer();
-        expandedNodes = 0;
-        //maxDepth = 0;
-        currDepthLimit = 0;
-        long startTime = System.currentTimeMillis();
-        boolean exit = false;
-        do {
-            currDepthLimit++;
-            //maxDepthReached = false;
-            List<ACTION> newResults = new ArrayList<ACTION>();
-            double newResultValue = Double.NEGATIVE_INFINITY;
-            double secondBestValue = Double.NEGATIVE_INFINITY;
-
-            for (ACTION action : orderActions(state, game.getActions(state),
-                    player, 0)) {
-                if (results != null
-                        && System.currentTimeMillis() > startTime + maxTime) {
-                    exit = true;
+    /**
+     * LLegar a nodos vacios
+     *
+     * @param emptySearch
+     * @return
+     */
+    private int reachEmptyNodes(ArrayList<Integer> emptySearch) {
+        for (int i = 0; i < emptySearch.size(); i++) {
+            for (int j = 1; j < 7; j++) {
+                if (emptySearch.get(i) > j) {
+                    if (j + tablero.getSeeds(emptySearch.get(i), player) == emptySearch.get(i)) {
+                        return j;
+                    }
+                } else {
                     break;
                 }
-                double value = minValue(game.getResult(state, action), player,
-                        Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, 1);
+            }
+        }
+        return -1;
+    }
 
-                if (value >= newResultValue) {
-                    if (value > newResultValue) {
-                        secondBestValue = newResultValue;
-                        newResultValue = value;
-                        newResults.clear();
+    /**
+     * Trata de ordenar las posiciones de un array. Entiendo...
+     *
+     * @param position
+     * @return
+     */
+    private ArrayList<Integer> orderPositions(ArrayList<Integer> position) {
+        ArrayList<Integer> fList = new ArrayList<Integer>();
+        fList.add(position.get(0));
+        for (int i = 1; i < position.size(); i++) {
+            for (int j = 0; j < fList.size(); j++) {
+                if (tablero.getSeeds(position.get(i), tablero.getNextPlayer()) >= tablero.getSeeds(fList.get(j), tablero.getNextPlayer())) {
+                    fList.add(j, position.get(i));
+                    break;
+                }
+            }
+        }
+        return fList;
+
+    }
+
+    /**
+     * Expandimos todas las posibles combinaciones Usando DFS
+     *
+     * @return
+     */
+    private int expand() {
+        if (originalPlayer == 1) {
+            if (depth > 0 && !tablero.gameEnded()) {
+                int value = 0;
+                int depth = new Integer(this.depth - 1);
+                if (player == 1) {
+                    if (emptySpaceMovement() != -1) {
+                        GameState tableroCopia = tablero.clone();
+                        tableroCopia.makeMove(emptySpaceMovement());
+                        return new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                    } else {
+                        HashMap<Integer, Integer> values = new HashMap<Integer, Integer>();
+                        for (int i = 1; i <= 6; i++) {
+                            if (tablero.moveIsPossible(i)) {
+                                if (tablero.getSeeds(i, player) + i == 7) {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax()
+                                            .decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                                    values.put(i, value);
+                                } else {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                                    values.put(i, value);
+                                }
+                            }
+                        }
+                        if (depth != realDepth - 1) {
+                            return selectMaxValue(values);
+                        } else {
+                            return searchValue(values, selectMaxValue(values));
+                        }
                     }
-                    newResults.add(action);
-                } else if (value > secondBestValue) {
-                    secondBestValue = value;
+                } else if (player == 2) {
+                    if (emptySpaceMovement() != -1) {
+                        GameState tableroCopia = tablero.clone();
+                        tableroCopia.makeMove(emptySpaceMovement());
+                        return new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                    } else {
+                        HashMap<Integer, Integer> values = new HashMap<>();
+                        for (int i = 1; i <= 6; i++) {
+                            if (tablero.moveIsPossible(i)) {
+                                if (tablero.getSeeds(i, player) + i == 7) {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                                    values.put(i, value);
+                                } else {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                                    values.put(i, value);
+                                }
+                            }
+                        }
+                        return selectMinValue(values);
+                    }
+                } else {
+                    return -1002;
+                }
+
+            } else {
+                int scrOne = tablero.getScore(1);
+                int scrTwo = tablero.getScore(2);
+                if (scrOne == scrTwo) {
+                    return draw;
+                } else if (scrOne > scrTwo) {
+                    return maxWin;
+                } else if (scrOne < scrTwo) {
+                    return maxLose;
+                } else {
+                    return tablero.getSeeds(0, 1) - tablero.getSeeds(0, 2);
                 }
             }
-            if (!exit) {
-                results = newResults;
-                resultValue = newResultValue;
-            }
-            if (!exit && results.size() == 1) {
-                break;
-            }
-        } while (!exit);
-        return results.get(0);
-    }
 
-    public double maxValue(STATE state, PLAYER player, double alpha,
-            double beta, int depth) { // returns an utility value
-        expandedNodes++;
-        if (game.isTerminal(state) || depth >= currDepthLimit) {
-            return eval(state, player);
         } else {
-            double value = Double.NEGATIVE_INFINITY;
-            for (ACTION action : orderActions(state, game.getActions(state),
-                    player, depth)) {
-                value = Math.max(value, minValue(game.getResult(state, action), //
-                        player, alpha, beta, depth + 1));
-                if (value >= beta) {
-                    return value;
+
+            if (depth > 0 && !tablero.gameEnded()) {
+                int value = 0;
+                int depth = new Integer(this.depth - 1);
+                HashMap<Integer, Integer> values = new HashMap<>();
+                if (player == 1) {
+                    if (emptySpaceMovement() != -1) {
+                        GameState tableroCopia = tablero.clone();
+                        tableroCopia.makeMove(emptySpaceMovement());
+                        return new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                    } else {
+                        for (int i = 1; i < 7; i++) {
+                            if (tablero.moveIsPossible(i)) {
+                                if (tablero.getSeeds(i, player) + i == 7) {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                                    values.put(i, value);
+                                } else {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                                    values.put(i, value);
+                                }
+                            }
+                        }
+                    }
+                    return selectMinValue(values);
+
+                } else if (player == 2) {
+                    if (emptySpaceMovement() != -1) {
+                        GameState tableroCopia = tablero.clone();
+
+                        tableroCopia.makeMove(emptySpaceMovement());
+                        return new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                    } else {
+                        for (int i = 1; i <= 6; i++) {
+                            if (tablero.moveIsPossible(i)) {
+                                if (tablero.getSeeds(i, player) + i == 7) {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
+                                    values.put(i, value);
+                                } else {
+                                    GameState tableroCopia = tablero.clone();
+                                    tableroCopia.makeMove(i);
+                                    value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
+                                    values.put(i, value);
+                                }
+                            }
+                        }
+                    }
+                    if (depth != realDepth - 1) {
+                        return selectMaxValue(values);
+                    } else {
+                        return searchValue(values, selectMaxValue(values));
+                    }
                 }
-                alpha = Math.max(alpha, value);
+            } else {
+                if (tablero.getWinner() == 0) {
+                    return draw;
+                } else if (tablero.getWinner() == 1) {
+                    return maxLose;
+                } else if (tablero.getWinner() == 2) {
+                    return maxWin;
+                } else {
+                    return tablero.getSeeds(0, 2) - tablero.getSeeds(1, 0);
+                }
             }
-            return value;
         }
+        return -1010;
     }
 
-    public double minValue(STATE state, PLAYER player, double alpha,
-            double beta, int depth) { // returns an utility
-        expandedNodes++;
-        if (game.isTerminal(state) || depth >= currDepthLimit) {
-            return eval(state, player);
-        } else {
-            double value = Double.POSITIVE_INFINITY;
-            for (ACTION action : orderActions(state, game.getActions(state),
-                    player, depth)) {
-                value = Math.min(value, maxValue(game.getResult(state, action), //
-                        player, alpha, beta, depth + 1));
-                if (value <= alpha) {
-                    return value;
-                }
-                beta = Math.min(beta, value);
+    private int selectMaxValue(HashMap<Integer, Integer> list) {
+        ArrayList<Integer> nList = new ArrayList<Integer>(list.values());
+        int maxValue = nList.get(0);
+        for (int i = 1; i < nList.size(); i++) {
+            if (maxValue < nList.get(i)) {
+                maxValue = nList.get(i);
             }
-            return value;
         }
+        return maxValue;
     }
 
+    private int selectMinValue(HashMap<Integer, Integer> list) {
+        ArrayList<Integer> nList = new ArrayList<Integer>(list.values());
+        int minValue = nList.get(0);
+        for (int i = 1; i < nList.size(); i++) {
+            if (minValue > nList.get(i)) {
+                minValue = nList.get(i);
+            }
+        }
+        return minValue;
+    }
+
+    private int searchValue(HashMap<Integer, Integer> list, int value) {
+        for (int i = 1; i < 7; i++) {
+            if (list.get(i) != null) {
+                if (list.get(i) == value) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
 }
