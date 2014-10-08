@@ -18,10 +18,11 @@ public class MiniMax {
     /**
      *
      * @param board(GameState) it will contain the GameState
-     * @param depth(int) It will have the depth  
+     * @param depth(int) It will have the depth
      * @param realDepth(int) The Real depth or the max level of the tree
      * @param player(int) The current Player
-     * @param originalPlayer(int) The player that was playing in the first iteration
+     * @param originalPlayer(int) The player that was playing in the first
+     * iteration
      * @return Int with the move we are going to do.
      */
     public int decideMovement(GameState board, int depth, int realDepth, int player, int originalPlayer) {
@@ -42,9 +43,10 @@ public class MiniMax {
     }
 
     /**
-     * Busqueda Vacia. No se que hace.
-     *
-     * @return
+     * emptySearch()
+     * Busca las casillas que tengamos en 0 y que el oponente
+     * tenga en 0 al mismo tiempo.
+     * @return Arraylist<Integer> con las posiciones 0
      */
     private ArrayList<Integer> emptySearch() {
         ArrayList<Integer> position = new ArrayList<Integer>();
@@ -63,10 +65,11 @@ public class MiniMax {
     }
 
     /**
-     * LLegar a nodos vacios
+     * reachEmptyNodes
      *
-     * @param emptySearch
-     * @return
+     * @param emptySearch ArrayList<Integer> A list with the all the nodes with 0 seeds.
+     * (It should be 0 for the player and 0 for the oponent)
+     * @return 
      */
     private int reachEmptyNodes(ArrayList<Integer> emptySearch) {
         for (int i = 0; i < emptySearch.size(); i++) {
@@ -172,17 +175,7 @@ public class MiniMax {
                 }
 
             } else {
-                int scrOne = tablero.getScore(1);
-                int scrTwo = tablero.getScore(2);
-                if (scrOne == scrTwo) {
-                    return draw;
-                } else if (scrOne > scrTwo) {
-                    return maxWin;
-                } else if (scrOne < scrTwo) {
-                    return maxLose;
-                } else {
-                    return tablero.getSeeds(0, 1) - tablero.getSeeds(0, 2);
-                }
+                return utility(tablero, originalPlayer);
             }
 
         } else {
@@ -223,14 +216,16 @@ public class MiniMax {
                         return new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
                     } else {
                         for (int i = 1; i <= 6; i++) {
-                            if (tablero.moveIsPossible(i)) {
+                            if (tablero.getSeeds(i, player) > 0) {
                                 if (tablero.getSeeds(i, player) + i == 7) {
                                     GameState tableroCopia = tablero.clone();
+
                                     tableroCopia.makeMove(i);
                                     value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 2, originalPlayer);
                                     values.put(i, value);
                                 } else {
                                     GameState tableroCopia = tablero.clone();
+
                                     tableroCopia.makeMove(i);
                                     value = new MiniMax().decideMovement(tableroCopia, depth, realDepth, 1, originalPlayer);
                                     values.put(i, value);
@@ -245,20 +240,16 @@ public class MiniMax {
                     }
                 }
             } else {
-                if (tablero.getWinner() == 0) {
-                    return draw;
-                } else if (tablero.getWinner() == 1) {
-                    return maxLose;
-                } else if (tablero.getWinner() == 2) {
-                    return maxWin;
-                } else {
-                    return tablero.getSeeds(0, 2) - tablero.getSeeds(1, 0);
-                }
+                utility(tablero,originalPlayer);
             }
         }
         return -1010;
     }
-
+    /**
+     * 
+     * @param list hashMap con la lista de los posibles movimientos y sus valores
+     * @return El valor maximos de la lista.
+     */
     private int selectMaxValue(HashMap<Integer, Integer> list) {
         ArrayList<Integer> nList = new ArrayList<Integer>(list.values());
         int maxValue = nList.get(0);
@@ -290,5 +281,31 @@ public class MiniMax {
             }
         }
         return -1;
+    }
+
+    private int utility(GameState gameState, int originalplayer) {
+                    int scrOne = gameState.getScore(1);
+            int scrTwo = gameState.getScore(2);
+        if (originalplayer == 1) {
+            if (scrOne == scrTwo) {
+                return draw;
+            } else if (scrOne > scrTwo) {
+                return maxWin;
+            } else if (scrOne < scrTwo) {
+                return maxLose;
+            } else {
+                return tablero.getSeeds(0, 1) - tablero.getSeeds(0, 2);
+            }
+        } else {
+            if (scrOne == scrTwo) {
+                return draw;
+            } else if (scrOne > scrTwo) {
+                return maxLose;
+            } else if (scrOne < scrTwo) {
+                return maxWin;
+            }else{
+                return tablero.getSeeds(0, 2) - tablero.getSeeds(1, 0);
+            }
+        }
     }
 }

@@ -232,13 +232,14 @@ public class AIClient implements Runnable {
                     if (game.moveIsPossible(i)) {
                         game.makeMove(i);
                         recursivo = miniMax(game, profundidad + 1,
-                                game.getNextPlayer());
+                                game.getNextPlayer()).clone();
                         if (resultado[0] < recursivo[0]) {
                             resultado[0] = recursivo[0]; // MAX
-                            //System.out.println(resultado[0]+" > "+recursivo[0]);
+                            resultado[1]=i;
                             if (profundidad == 0) {
                                 resultado[1] = i;
                             }
+                            
                         }
                     }
                 }
@@ -250,7 +251,7 @@ public class AIClient implements Runnable {
                     if (game.moveIsPossible(i)) {
                         game.makeMove(i);
                         recursivo = miniMax(game, profundidad + 1,
-                                game.getNextPlayer());
+                                game.getNextPlayer()).clone();
                         //System.out.println(resultado[0]+" > "+recursivo[0]);
                         if (resultado[0] >= recursivo[0]) {
                             resultado[0] = recursivo[0]; // MIN
