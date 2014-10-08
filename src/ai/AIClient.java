@@ -26,7 +26,7 @@ public class AIClient implements Runnable {
     private Socket socket;
     private boolean running;
     private boolean connected;
-    private int maximalLevel = 0;
+    private int depthMax = 0;
 
     /**
      * Creates a new client.
@@ -193,20 +193,22 @@ public class AIClient implements Runnable {
      * @return Move to make (1-6)
      */
     public int getMove(GameState currentBoard) {
-        maximalLevel = 0;
+        depthMax = 0;
         long tiempoInicial = System.currentTimeMillis();
         int myMove = 0;
         int[] datos = new int[2];
+        
         do {
             // System.out.println("Entre");
-            maximalLevel++;
+            depthMax++;
             datos = miniMax(currentBoard, 0, player);
-            myMove = datos[1];            
+            myMove = datos[1];
         } while (Math.pow((System.currentTimeMillis() - tiempoInicial), 1.3) < 5000);
-        int puntuacion = datos[0];
+        
+        //int puntuacion = datos[0];
         addText("=====INFO=====");
         addText("Jugador ===> " + player + " ||| movimiento ===> " + myMove);
-        addText("Puntuacion ===> " + puntuacion);
+        //addText("Puntuacion ===> " + puntuacion);
         addText("==============");
         return myMove;
     }
@@ -224,26 +226,35 @@ public class AIClient implements Runnable {
 
         int[] resultado = new int[2];
         int[] recursivo = new int[2];
-        if (profundidad < maximalLevel) { //LLegamos al maximo
-            if (jugador == 1) {
+        double max = Double.NEGATIVE_INFINITY;
+        double min = Double.POSITIVE_INFINITY;
+        if (!maxDepthReached(depthMax, profundidad)) { //LLegamos al maximo
+            //if (jugador == 1) {
                 resultado[0] = -Integer.MAX_VALUE;
-                for (int i = 1; i <= 6; i++) {
-                    GameState game = gs.clone();
-                    if (game.moveIsPossible(i)) {
-                        game.makeMove(i);
+                for (int casa = 1; casa <= 6; casa++) { //Indice que nos marca el movimiento de los ambos
+                    if (gs.moveIsPossible(casa)) { //Si el movimiento se peude realizar (Ambo!=0)
+                        GameState game = gs.clone(); //Clonamos el estado del juego
+                        game.makeMove(casa);//Hacemos el movimiento
                         recursivo = miniMax(game, profundidad + 1,
                                 game.getNextPlayer()).clone();
-                        if (resultado[0] < recursivo[0]) {
-                            resultado[0] = recursivo[0]; // MAX
-                            resultado[1]=i;
+                        /*
+                        LLamamos al recursivo para ir al siguiente nivel,
+                        en caso de que ese nivel sobrepase a la maxDepth
+                        daremos el valor de ese estado.
+                        */
+                        
+                        
+                        if (recursivo[0] > resultado[0]) { //Si el resultado obtenido es mayor que el que teniamos guardado 
+                            resultado[0] = recursivo[0]; // Actualizamos el valor al MAX
+                            resultado[1]=casa; //Guardamos el valor del indice.
                             if (profundidad == 0) {
-                                resultado[1] = i;
+                                resultado[1] = casa; //En caso de que la profundidad sea 0  actualizamos el valor de resultado[1]
                             }
-                            
                         }
                     }
-                }
+               // }
             }
+            /*    
             if (jugador == 2) {
                 resultado[0] = Integer.MAX_VALUE;
                 for (int i = 1; i <= 6; i++) {
@@ -260,9 +271,71 @@ public class AIClient implements Runnable {
                     }
                 }
             }
+            */
         } else {
             resultado[0] = gs.getScore(jugador);
         }
         return resultado;
+    }
+    /**
+     * Nos dirá si se ha llegado a la profundidad maxima.
+     * @param depth profundidad actual
+     * @param maxDepth profundidad maxima
+     * @return  devolverá true si se ha llegado a la maxima
+     * profundidad y false en caso contrario.
+     */
+    public boolean maxDepthReached(int depth, int maxDepth){
+        return (depth > maxDepth);
+    }
+    /**
+     * Saber quien es el jugador actual
+     * @param gs el tablero con el jugador actual
+     * @return true si el juegador es max
+     */
+    public boolean whosTurn(GameState gs){
+        return gs.getNextPlayer()==player;
+    }
+    
+    public int evaluacion(GameState gs, int player, boolean max){
+        int jugador1 = gs.getScore(player);
+        int jugador2 = gs.getScore(swapPlayer(player));
+        int score = 0;
+        if (max == true){
+            if (jugador1>jugador2){
+                score = jugador1*1000;
+            }else{
+                score = jugador2*-1000;
+            }
+        }
+        else{
+            if (jugador1>jugador2){
+                score = jugador2*-1000;
+            }else{
+                score = jugador1*1000;
+            }
+        }
+        return score;
+    }
+    /**
+     * Cambia el jugador actual
+     * @param player jugador actual
+     * @return devuelve el jugador contrario al actual o un -1 en caso de error.
+     */
+    public int swapPlayer(int player){
+        if(player == 1)
+        {
+            player = 2;
+        }
+        else if(player == 2)
+        {
+            player = 1;
+        }
+        else
+        {
+            player = -1;
+        }
+        
+        return player;
+                    
     }
 }
