@@ -301,8 +301,10 @@ public class AIClient implements Runnable {
         depthLimit = 0;
         int movimiento = 0;
         long tiempoInicial = System.currentTimeMillis();
-        int value = 0;// value (puntuacion, ambo)
-        int puntos = 0;
+        int value = 0;// Puntuacion
+        int puntos = 0; //DEBUG
+        long timeElapsed = 0;
+        boolean exit = false;
 
         do {
             depthMax++;
@@ -322,11 +324,17 @@ public class AIClient implements Runnable {
                     }
                 }
             }
+            depthLimit++;
+            timeElapsed = System.currentTimeMillis() - tiempoInicial;
+            //addText("TIEMPO ==> "+ timeElapsed + "PROFUNDIDAD ==> " +  depthLimit);
+            if (timeElapsed > 3200)
+                exit = true;
 
-        } while (Math.pow((System.currentTimeMillis() - tiempoInicial), 1.3) < 5000);
+        } while (timeElapsed < 5000 && !exit && !gs.gameEnded());
         addText("=====INFO=====");
         addText("Jugador ===> " + player + " ||| movimiento ===> " + movimiento);
         addText("Puntuacion ==> " + puntos);
+       // addText("PROFUNDIDAD ==> " +  depthLimit);
         addText("=============");
         return movimiento;
 
@@ -369,6 +377,10 @@ public class AIClient implements Runnable {
                         //System.out.println("");
                         value = valor;
                     }
+                    if (value <= alpha) {
+                        return (int) value;
+                    }
+                    beta = Math.min(beta, value);
 
                 }
                 /*
@@ -410,6 +422,7 @@ public class AIClient implements Runnable {
         double valor;
         if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //LLegamos al maximo
             //return evaluacion(game, jugador, true);
+            //int score = game.getScore(swapPlayer(jugador));
             return game.getScore(swapPlayer(jugador));
             //return game.getScore(jugador);
         } else {
@@ -423,7 +436,11 @@ public class AIClient implements Runnable {
                     if (valor > value) {
                         value = valor;
                     }
-                    
+                    if (value >= beta) {
+                        return (int) value;
+                    }
+                    alpha = Math.max(alpha, value);
+
                 }
                 /*
                  LLamamos al recursivo para ir al siguiente nivel,
