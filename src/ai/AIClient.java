@@ -27,9 +27,8 @@ public class AIClient implements Runnable {
     private boolean running;
     private boolean connected;
     private int depthMax = 0;
-    int contador = 0;
-    private int depthLimit;
-    private int Movimiento;
+    //private int depthLimit;
+    
 
     /**
      * Creates a new client.
@@ -217,11 +216,11 @@ public class AIClient implements Runnable {
      */
     public int makeDecision(GameState gs) {
         depthMax = 0;
-        depthLimit = 0; //For Debug
+       // depthLimit = 0; //For Debug
         int movimiento = 0;
-        long tiempoInicial = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         int value = 0;// Puntuacion
-        int puntos = 0; //DEBUG
+        int points = 0; //DEBUG
         long timeElapsed = 0;
         boolean exit = false;
 
@@ -237,12 +236,12 @@ public class AIClient implements Runnable {
                     if (value > newResultValue) {
                         newResultValue = value;
                         movimiento = ambo;
-                        puntos = newResultValue;
+                        points = newResultValue;
                     }
                 }
             }
             //depthLimit++; //DEBUG
-            timeElapsed = System.currentTimeMillis() - tiempoInicial;
+            timeElapsed = System.currentTimeMillis() - startTime;
             //addText("TIEMPO ==> "+ timeElapsed + "PROFUNDIDAD ==> " +  depthLimit);
             if (timeElapsed > 3200) {
                 exit = true;
@@ -251,7 +250,7 @@ public class AIClient implements Runnable {
         } while (timeElapsed < 5000 && !exit && !gs.gameEnded());
         addText("=====INFO=====");
         addText("Jugador ===> " + player + " ||| movimiento ===> " + movimiento);
-        addText("Puntuacion ==> " + puntos);
+        addText("Puntuacion ==> " + points);
         // addText("PROFUNDIDAD ==> " +  depthLimit);
         addText("=============");
         return movimiento;
@@ -269,24 +268,20 @@ public class AIClient implements Runnable {
      * @return The min of the utility values.
      */
     public int minValue(GameState game, int depth, int jugador, double alpha, double beta) {
-        double valor;
+        double newValue;
         if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //LLegamos al maximo
-            //return evaluacion(game, jugador, false);
-            //return game.getScore(jugador);
             return game.getScore(swapPlayer(jugador));
 
         } else {
             double value = Double.POSITIVE_INFINITY;
-            for (int casa = 1; casa <= 6; casa++) { //Indice que nos marca el movimiento de los ambos
-                if (game.moveIsPossible(casa)) { //Si el movimiento se peude realizar (Ambo!=0)
+            for (int ambo = 1; ambo <= 6; ambo++) { //Indice que nos marca el movimiento de los ambos
+                if (game.moveIsPossible(ambo)) { //Si el movimiento se peude realizar (Ambo!=0)
                     GameState gs = game.clone(); //Clonamos el estado del juego
-                    gs.makeMove(casa);//Hacemos el movimiento                    
-                    valor = maxValue(gs, depth + 1,
+                    gs.makeMove(ambo);//Hacemos el movimiento                    
+                    newValue = maxValue(gs, depth + 1,
                             gs.getNextPlayer(), alpha, beta);
-                    if (valor < value) {
-                        // System.out.println(valor + "<" + value);
-                        //System.out.println("");
-                        value = valor;
+                    if (newValue < value) {
+                        value = newValue;
                     }
                     if (value <= alpha) {
                         return (int) value;
@@ -314,20 +309,20 @@ public class AIClient implements Runnable {
     }
 
     public int maxValue(GameState game, int depth, int jugador, double alpha, double beta) {
-        double valor;
+        double newValue;
         if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //LLegamos al maximo
             return game.getScore(swapPlayer(jugador));
-            //return game.getScore(jugador);
+            
         } else {
             double value = Double.NEGATIVE_INFINITY;
             for (int casa = 1; casa <= 6; casa++) { //Indice que nos marca el movimiento de los ambos
                 if (game.moveIsPossible(casa)) { //Si el movimiento se peude realizar (Ambo!=0)
                     GameState gs = game.clone(); //Clonamos el estado del juego
                     gs.makeMove(casa);//Hacemos el movimiento
-                    valor = minValue(gs, depth + 1,
+                    newValue = minValue(gs, depth + 1,
                             gs.getNextPlayer(), alpha, beta);
-                    if (valor > value) {
-                        value = valor;
+                    if (newValue > value) {
+                        value = newValue;
                     }
                     if (value >= beta) {
                         return (int) value;
