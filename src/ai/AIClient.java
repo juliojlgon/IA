@@ -195,7 +195,7 @@ public class AIClient implements Runnable {
      * @return Move to make (1-6)
      */
     public int getMove(GameState currentBoard) {
-        int myMove = makeDecision(currentBoard);
+        int myMove = makeDecision(currentBoard); //Chooses the best move
         return myMove;
     }
 
@@ -215,28 +215,28 @@ public class AIClient implements Runnable {
      * @return Best move to make (1-6)
      */
     public int makeDecision(GameState gs) {
-        depthMax = 0;
+        depthMax = 0;  //depthMax starts with 0
        // depthLimit = 0; //For Debug
-        int movimiento = 0;
-        long startTime = System.currentTimeMillis();
+        int movimiento = 0; //Declare and initialize movimiento
+        long startTime = System.currentTimeMillis();//Declare and initialize startTime
         int value = 0;// Puntuacion
         int points = 0; //DEBUG
-        long timeElapsed = 0;
-        boolean exit = false;
+        long timeElapsed = 0;//Declare and initialize timeElapsed
+        boolean exit = false;//Declare and initialize exit
 
-        do {
-            depthMax++;
+        do { //Do while the time is less than 5 seconds or the game is over
+            depthMax++;//Increment in one the depthMax
             int newResultValue = 0;
-            for (int ambo = 1; ambo <= 6; ambo++) {
+            for (int ambo = 1; ambo <= 6; ambo++) { //Tries the six ambos
                 if (gs.moveIsPossible(ambo)) { //If it's a possible move
                     GameState game = gs.clone(); //We clone the actual GameState
                     game.makeMove(ambo); //We make the move
-                    value = minValue(game, 1, game.getNextPlayer(), Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+                    value = minValue(game, 1, game.getNextPlayer(), Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);//As we are in a max we call min function
                     //We call the function that will return to us the minimun value.
-                    if (value > newResultValue) {
-                        newResultValue = value;
-                        movimiento = ambo;
-                        points = newResultValue;
+                    if (value > newResultValue) { //Compare the two results
+                        newResultValue = value;   //
+                        movimiento = ambo;        //Save the new values
+                        points = newResultValue;  //
                     }
                 }
             }
@@ -248,11 +248,10 @@ public class AIClient implements Runnable {
             }
 
         } while (timeElapsed < 5000 && !exit && !gs.gameEnded());
-        addText("=====INFO=====");
-        addText("Jugador ===> " + player + " ||| movimiento ===> " + movimiento);
-        addText("Puntuacion ==> " + points);
-        // addText("PROFUNDIDAD ==> " +  depthLimit);
-        addText("=============");
+        addText("=====INFO=====");//Tracking
+        addText("Player ===> " + player + " ||| Move ===> " + movimiento);//Tracking
+        addText("Score ==> " + points);//Tracking
+        addText("=============");//Tracking
         return movimiento;
 
     }
@@ -269,21 +268,21 @@ public class AIClient implements Runnable {
      */
     public int minValue(GameState game, int depth, int jugador, double alpha, double beta) {
         double newValue;
-        if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //LLegamos al maximo
+        if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //If we are in the maximun depth
             return game.getScore(swapPlayer(jugador));
 
-        } else {
+        } else { //We are not in the maximun depth
             double value = Double.POSITIVE_INFINITY;
-            for (int ambo = 1; ambo <= 6; ambo++) { //Indice que nos marca el movimiento de los ambos
-                if (game.moveIsPossible(ambo)) { //Si el movimiento se peude realizar (Ambo!=0)
-                    GameState gs = game.clone(); //Clonamos el estado del juego
-                    gs.makeMove(ambo);//Hacemos el movimiento                    
+            for (int ambo = 1; ambo <= 6; ambo++) { //Index that mark the movement of the ambos
+                if (game.moveIsPossible(ambo)) { //The movement is posible (ambo!=0)
+                    GameState gs = game.clone(); //Clone the state of the game 
+                    gs.makeMove(ambo);//Make the movement                    
                     newValue = maxValue(gs, depth + 1,
                             gs.getNextPlayer(), alpha, beta);
-                    if (newValue < value) {
+                    if (newValue < value) { //Compare the values
                         value = newValue;
                     }
-                    if (value <= alpha) {
+                    if (value <= alpha) { //Pruning
                         return (int) value;
                     }
                     beta = Math.min(beta, value);
@@ -310,21 +309,21 @@ public class AIClient implements Runnable {
 
     public int maxValue(GameState game, int depth, int jugador, double alpha, double beta) {
         double newValue;
-        if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //LLegamos al maximo
+        if (maxDepthReached(depth, depthMax) == true || game.gameEnded()) { //We are in the maximun 
             return game.getScore(swapPlayer(jugador));
             
         } else {
             double value = Double.NEGATIVE_INFINITY;
-            for (int casa = 1; casa <= 6; casa++) { //Indice que nos marca el movimiento de los ambos
-                if (game.moveIsPossible(casa)) { //Si el movimiento se peude realizar (Ambo!=0)
-                    GameState gs = game.clone(); //Clonamos el estado del juego
-                    gs.makeMove(casa);//Hacemos el movimiento
+            for (int casa = 1; casa <= 6; casa++) { //Index that mark the movement of the ambos
+                if (game.moveIsPossible(casa)) { //The movement is posible (ambo!=0)
+                    GameState gs = game.clone(); //Clone the state of the game 
+                    gs.makeMove(casa);//Make the movement
                     newValue = minValue(gs, depth + 1,
                             gs.getNextPlayer(), alpha, beta);
-                    if (newValue > value) {
+                    if (newValue > value) {//Compare the values
                         value = newValue;
                     }
-                    if (value >= beta) {
+                    if (value >= beta) { //Pruning
                         return (int) value;
                     }
                     alpha = Math.max(alpha, value);
